@@ -3,7 +3,7 @@ use Models\Auth;
 
 class AESGCM {
     private static function getKeyBytes(): string {
-        $key = $_ENV['ENCRYPTION_KEY'] ?? '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+        $key = $_ENV['ENCRYPTION_KEY'];
         return hex2bin($key);
     }
 
