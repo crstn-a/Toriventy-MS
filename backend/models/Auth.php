@@ -6,18 +6,20 @@ class Auth {
 
     // ── Called by AuthController ─────────────────────────────────────────────
     public function register(array $data): array {
-        $stmt = $this->pdo->prepare("CALL registerUser(?, ?, ?)");
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO tbl_users (fld_username, fld_email, fld_password_hash) VALUES (?, ?, ?)"
+        );
         $stmt->execute([
             $data['username'],
             $data['email'],
             password_hash($data['password'], PASSWORD_BCRYPT),
         ]);
-        $result = $stmt->fetch();
-        return $result ? ['user_id' => (int)$result['fld_user_id']] : [];
+
+        return ['user_id' => (int)$this->pdo->lastInsertId()];
     }
 
     public function login(string $email, string $password): array {
-        $stmt = $this->pdo->prepare("CALL getUserByEmail(?)");
+        $stmt = $this->pdo->prepare("SELECT * FROM tbl_users WHERE fld_email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
@@ -37,20 +39,25 @@ class Auth {
     }
 
     public function findById(int $id): ?array {
-        $stmt = $this->pdo->prepare("CALL getUserById(?)");
+        $stmt = $this->pdo->prepare(
+            "SELECT fld_user_id, fld_username, fld_email, fld_role FROM tbl_users WHERE fld_user_id = ?"
+        );
         $stmt->execute([$id]);
         return $stmt->fetch() ?: null;
     }
 
     public function updateProfile(int $id, array $data): void {
-        $stmt = $this->pdo->prepare("CALL updateUserProfile(?, ?, ?)");
-        $stmt->execute([$id, $data['username'], $data['email']]);
+        $stmt = $this->pdo->prepare(
+            "UPDATE tbl_users SET fld_username = ?, fld_email = ? WHERE fld_user_id = ?"
+        );
+        $stmt->execute([$data['username'], $data['email'], $id]);
     }
 
     public function emailExists(string $email): bool {
-        $stmt = $this->pdo->prepare("CALL getUserByEmail(?)");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) AS count FROM tbl_users WHERE fld_email = ?");
         $stmt->execute([$email]);
-        return (bool) $stmt->fetch();
+        $result = $stmt->fetch();
+        return !empty($result['count']);
     }
 
     // ── JWT (fixed — was broken in original) ────────────────────────────────

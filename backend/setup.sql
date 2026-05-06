@@ -1,42 +1,389 @@
--- Create Users table
-CREATE TABLE IF NOT EXISTS `tbl_users` (
-  `fld_user_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `fld_username` VARCHAR(100) NOT NULL,
-  `fld_email` VARCHAR(100) UNIQUE NOT NULL,
-  `fld_password_hash` VARCHAR(255) NOT NULL,
-  `fld_role` VARCHAR(20) DEFAULT 'user',
-  `fld_created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `fld_updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+CREATE DATABASE IF NOT EXISTS toriventy_db
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
--- Create Products table
-CREATE TABLE IF NOT EXISTS `tbl_products` (
-  `fld_product_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `fld_name` VARCHAR(255) NOT NULL,
-  `fld_description` TEXT,
-  `fld_price` DECIMAL(10, 2) NOT NULL,
-  `fld_created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `fld_updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+USE toriventy_db;
 
--- Create Suppliers table
-CREATE TABLE IF NOT EXISTS `tbl_suppliers` (
-  `fld_supplier_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `fld_name` VARCHAR(255) NOT NULL,
-  `fld_email` VARCHAR(100),
-  `fld_phone` VARCHAR(20),
-  `fld_address` TEXT,
-  `fld_created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `fld_updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- ============================================================================
+-- TABLES
+-- ============================================================================
 
--- Create Stock table
-CREATE TABLE IF NOT EXISTS `tbl_stock` (
-  `fld_stock_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `fld_product_id` INT NOT NULL,
-  `fld_quantity` INT DEFAULT 0,
-  `fld_reorder_level` INT DEFAULT 10,
-  `fld_created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `fld_updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`fld_product_id`) REFERENCES `tbl_products`(`fld_product_id`) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS tbl_users (
+    fld_user_id INT NOT NULL AUTO_INCREMENT,
+    fld_username VARCHAR(50) NOT NULL,
+    fld_email VARCHAR(100) NOT NULL,
+    fld_password_hash VARCHAR(255) NOT NULL,
+    fld_role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
+    fld_created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (fld_user_id),
+    UNIQUE KEY uq_email (fld_email),
+    UNIQUE KEY uq_username (fld_username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tbl_suppliers (
+    fld_supplier_id INT NOT NULL AUTO_INCREMENT,
+    fld_supplierName VARCHAR(150) NOT NULL,
+    fld_supplierPhoneNum VARCHAR(20) NOT NULL,
+    fld_supplierEmail VARCHAR(100) NOT NULL,
+    fld_supplierAddress TEXT NOT NULL,
+    fld_created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (fld_supplier_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tbl_products (
+    fld_product_id INT NOT NULL AUTO_INCREMENT,
+    fld_supplier_id INT NOT NULL,
+    fld_productName VARCHAR(150) NOT NULL,
+    fld_productSKU VARCHAR(50) NOT NULL,
+    fld_description TEXT,
+    fld_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    fld_created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (fld_product_id),
+    UNIQUE KEY uq_sku (fld_productSKU),
+
+    CONSTRAINT fk_product_supplier
+        FOREIGN KEY (fld_supplier_id)
+        REFERENCES tbl_suppliers (fld_supplier_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tbl_stock (
+    fld_stock_id INT NOT NULL AUTO_INCREMENT,
+    fld_product_id INT NOT NULL,
+    fld_quantity INT NOT NULL DEFAULT 0,
+    fld_low_stock_threshold INT NOT NULL DEFAULT 10,
+    fld_last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (fld_stock_id),
+    UNIQUE KEY uq_stock_product (fld_product_id),
+
+    CONSTRAINT fk_stock_product
+        FOREIGN KEY (fld_product_id)
+        REFERENCES tbl_products (fld_product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tbl_stock_logs (
+    fld_log_id INT NOT NULL AUTO_INCREMENT,
+    fld_product_id INT NOT NULL,
+    fld_user_id INT NOT NULL,
+    fld_quantity_change INT NOT NULL,
+    fld_reason VARCHAR(255) DEFAULT NULL,
+    fld_logged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (fld_log_id),
+
+    CONSTRAINT fk_log_product
+        FOREIGN KEY (fld_product_id)
+        REFERENCES tbl_products (fld_product_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_log_user
+        FOREIGN KEY (fld_user_id)
+        REFERENCES tbl_users (fld_user_id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================================
+-- PROCEDURES
+-- ============================================================================
+
+DELIMITER $$
+
+-- ============================================================================
+-- SUPPLIERS
+-- ============================================================================
+
+DROP PROCEDURE IF EXISTS getSupplierInformation$$
+CREATE PROCEDURE getSupplierInformation()
+BEGIN
+    SELECT *
+    FROM tbl_suppliers
+    ORDER BY fld_supplierName ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS insertSupplierInformation$$
+CREATE PROCEDURE insertSupplierInformation(
+    IN p_supplierName VARCHAR(150),
+    IN p_supplierPhoneNum VARCHAR(20),
+    IN p_supplierEmail VARCHAR(100),
+    IN p_supplierAddress TEXT
+)
+BEGIN
+    DECLARE v_supplier_id INT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Failed to insert supplier';
+    END;
+
+    START TRANSACTION;
+
+        INSERT INTO tbl_suppliers (
+            fld_supplierName,
+            fld_supplierPhoneNum,
+            fld_supplierEmail,
+            fld_supplierAddress
+        )
+        VALUES (
+            p_supplierName,
+            p_supplierPhoneNum,
+            p_supplierEmail,
+            p_supplierAddress
+        );
+
+        SET v_supplier_id = LAST_INSERT_ID();
+
+        SELECT *
+        FROM tbl_suppliers
+        WHERE fld_supplier_id = v_supplier_id;
+
+    COMMIT;
+END$$
+
+DROP PROCEDURE IF EXISTS updateSupplier$$
+CREATE PROCEDURE updateSupplier(
+    IN p_supplier_id INT,
+    IN p_supplierName VARCHAR(150),
+    IN p_supplierPhoneNum VARCHAR(20),
+    IN p_supplierEmail VARCHAR(100),
+    IN p_supplierAddress TEXT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Failed to update supplier';
+    END;
+
+    START TRANSACTION;
+
+        UPDATE tbl_suppliers
+        SET
+            fld_supplierName = p_supplierName,
+            fld_supplierPhoneNum = p_supplierPhoneNum,
+            fld_supplierEmail = p_supplierEmail,
+            fld_supplierAddress = p_supplierAddress
+        WHERE fld_supplier_id = p_supplier_id;
+
+        SELECT *
+        FROM tbl_suppliers
+        WHERE fld_supplier_id = p_supplier_id;
+
+    COMMIT;
+END$$
+
+DROP PROCEDURE IF EXISTS deleteSupplier$$
+CREATE PROCEDURE deleteSupplier(
+    IN p_supplier_id INT
+)
+BEGIN
+    DELETE FROM tbl_suppliers
+    WHERE fld_supplier_id = p_supplier_id;
+
+    SELECT ROW_COUNT() AS deleted_rows;
+END$$
+
+-- ============================================================================
+-- USERS
+-- ============================================================================
+
+DROP PROCEDURE IF EXISTS registerUser$$
+CREATE PROCEDURE registerUser(
+    IN p_username VARCHAR(50),
+    IN p_email VARCHAR(100),
+    IN p_password_hash VARCHAR(255)
+)
+BEGIN
+    INSERT INTO tbl_users (
+        fld_username,
+        fld_email,
+        fld_password_hash,
+        fld_role
+    )
+    VALUES (
+        p_username,
+        p_email,
+        p_password_hash,
+        'user'
+    );
+
+    SELECT *
+    FROM tbl_users
+    WHERE fld_user_id = LAST_INSERT_ID();
+END$$
+
+DROP PROCEDURE IF EXISTS getUserByEmail$$
+CREATE PROCEDURE getUserByEmail(
+    IN p_email VARCHAR(100)
+)
+BEGIN
+    SELECT *
+    FROM tbl_users
+    WHERE fld_email = p_email
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS getUserById$$
+CREATE PROCEDURE getUserById(
+    IN p_user_id INT
+)
+BEGIN
+    SELECT *
+    FROM tbl_users
+    WHERE fld_user_id = p_user_id
+    LIMIT 1;
+END$$
+
+-- ============================================================================
+-- PRODUCTS
+-- ============================================================================
+
+DROP PROCEDURE IF EXISTS getProducts$$
+CREATE PROCEDURE getProducts()
+BEGIN
+    SELECT
+        p.*,
+        s.fld_supplierName,
+        st.fld_quantity,
+        st.fld_low_stock_threshold
+    FROM tbl_products p
+    JOIN tbl_suppliers s
+        ON p.fld_supplier_id = s.fld_supplier_id
+    LEFT JOIN tbl_stock st
+        ON p.fld_product_id = st.fld_product_id
+    ORDER BY p.fld_productName ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS insertProduct$$
+CREATE PROCEDURE insertProduct(
+    IN p_supplier_id INT,
+    IN p_productName VARCHAR(150),
+    IN p_productSKU VARCHAR(50),
+    IN p_description TEXT,
+    IN p_price DECIMAL(10,2),
+    IN p_low_stock_threshold INT
+)
+BEGIN
+    DECLARE v_product_id INT;
+
+    START TRANSACTION;
+
+        INSERT INTO tbl_products (
+            fld_supplier_id,
+            fld_productName,
+            fld_productSKU,
+            fld_description,
+            fld_price
+        )
+        VALUES (
+            p_supplier_id,
+            p_productName,
+            p_productSKU,
+            p_description,
+            p_price
+        );
+
+        SET v_product_id = LAST_INSERT_ID();
+
+        INSERT INTO tbl_stock (
+            fld_product_id,
+            fld_quantity,
+            fld_low_stock_threshold
+        )
+        VALUES (
+            v_product_id,
+            0,
+            p_low_stock_threshold
+        );
+
+        SELECT *
+        FROM tbl_products
+        WHERE fld_product_id = v_product_id;
+
+    COMMIT;
+END$$
+
+-- ============================================================================
+-- STOCK
+-- ============================================================================
+
+DROP PROCEDURE IF EXISTS updateStock$$
+CREATE PROCEDURE updateStock(
+    IN p_product_id INT,
+    IN p_user_id INT,
+    IN p_quantity_change INT,
+    IN p_reason VARCHAR(255)
+)
+BEGIN
+    DECLARE v_current_qty INT DEFAULT 0;
+    DECLARE v_new_qty INT DEFAULT 0;
+
+    START TRANSACTION;
+
+        SELECT fld_quantity
+        INTO v_current_qty
+        FROM tbl_stock
+        WHERE fld_product_id = p_product_id
+        FOR UPDATE;
+
+        SET v_new_qty = v_current_qty + p_quantity_change;
+
+        IF v_new_qty < 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Insufficient stock';
+        END IF;
+
+        UPDATE tbl_stock
+        SET fld_quantity = v_new_qty
+        WHERE fld_product_id = p_product_id;
+
+        INSERT INTO tbl_stock_logs (
+            fld_product_id,
+            fld_user_id,
+            fld_quantity_change,
+            fld_reason
+        )
+        VALUES (
+            p_product_id,
+            p_user_id,
+            p_quantity_change,
+            p_reason
+        );
+
+        SELECT
+            v_current_qty AS previous_quantity,
+            v_new_qty AS new_quantity;
+
+    COMMIT;
+END$$
+
+DROP PROCEDURE IF EXISTS getStockLevels$$
+CREATE PROCEDURE getStockLevels()
+BEGIN
+    SELECT
+        p.fld_productName,
+        p.fld_productSKU,
+        st.fld_quantity,
+        st.fld_low_stock_threshold,
+        CASE
+            WHEN st.fld_quantity = 0 THEN 'out_of_stock'
+            WHEN st.fld_quantity <= st.fld_low_stock_threshold THEN 'low'
+            ELSE 'ok'
+        END AS stock_status
+    FROM tbl_products p
+    JOIN tbl_stock st
+        ON p.fld_product_id = st.fld_product_id
+    ORDER BY st.fld_quantity ASC;
+END$$
+
+DELIMITER ;

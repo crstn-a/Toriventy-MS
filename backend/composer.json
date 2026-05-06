@@ -1,9 +1,9 @@
 {
     "autoload": {
-        "psr-4": {
-            "": "models/",
-            "": "controllers/"
-        }
+        "classmap": [
+            "models/",
+            "controllers/"
+        ]
     },
     "require": {
         "vlucas/phpdotenv": "^5.6",

@@ -1,0 +1,10 @@
+[06-May-2026 11:56:40 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method Dotenv\Dotenv::overload() in D:\laragon\www\Toriventy\backend\main.php:39
+Stack trace:
+#0 {main}
+  thrown in D:\laragon\www\Toriventy\backend\main.php on line 39
+[06-May-2026 11:57:28 UTC] Method: POST, URI: /api/auth/register, Params: api/auth/register
+[06-May-2026 11:57:45 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[06-May-2026 12:01:51 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[06-May-2026 12:02:06 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[06-May-2026 12:07:35 UTC] Method: POST, URI: /api/auth/register, Params: api/auth/register
+[06-May-2026 12:07:48 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login

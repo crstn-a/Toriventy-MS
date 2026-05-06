@@ -1,6 +1,7 @@
 <?php
 // ─── Response ────────────────────────────────────────────────────────────────
 function respond(string $status, string $message, mixed $data, int $code): void {
+    header('Content-Type: application/json; charset=utf-8');
     http_response_code($code);
     echo json_encode(['status' => $status, 'message' => $message, 'data' => $data]);
     exit();
