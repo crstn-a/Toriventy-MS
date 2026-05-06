@@ -1,39 +1,41 @@
 <?php
 class Suppliers {
-  protected $pdo;
+    public function __construct(private PDO $pdo) {}
 
-  public function __construct(\PDO $pdo) {
-    $this->pdo = $pdo;
-  }
+    public function getAll(): array {
+        $stmt = $this->pdo->prepare("CALL getSupplierInformation()");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 
-  public function getSuppliers() {
-    $stmt = $this->pdo->prepare("CALL getSupplierInformation()");
-    $stmt->execute();
-    return $stmt->fetchAll();
-  }
-  
-  public function insertSupplier() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id, $dt->fname, $dt->lname, $dt->dob];
-    $stmt = $this->pdo->prepare("CALL insertSupplier(?, ?, ?, ?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    // Data comes in from the controller — not read from php://input here
+    public function insert(array $data): array {
+        $stmt = $this->pdo->prepare(
+            "CALL insertSupplierInformation(?, ?, ?, ?, ?)"
+        );
+        $stmt->execute([
+            $data['supplier_id'],
+            $data['supplierName'],
+            $data['supplierPhoneNum'],
+            $data['supplierEmail'],
+            $data['supplierAddress'],
+        ]);
+        return $stmt->fetchAll();
+    }
 
-  public function updateSupplier() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id, $dt->fname, $dt->mname, $dt->lname, $dt->extname, $dt->dob];
-    $stmt = $this->pdo->prepare("CALL updateSupplier(?, ?, ?, ?, ?, ?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function update(int $id, array $data): bool {
+        $stmt = $this->pdo->prepare("CALL updateSupplier(?, ?, ?, ?, ?)");
+        return $stmt->execute([
+            $id,
+            $data['supplierName'],
+            $data['supplierPhoneNum'],
+            $data['supplierEmail'],
+            $data['supplierAddress'],
+        ]);
+    }
 
-  public function deleteSupplier() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id];
-    $stmt = $this->pdo->prepare("CALL deleteSupplier(?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function delete(int $id): bool {
+        $stmt = $this->pdo->prepare("CALL deleteSupplier(?)");
+        return $stmt->execute([$id]);
+    }
 }
-

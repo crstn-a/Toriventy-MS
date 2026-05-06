@@ -1,38 +1,46 @@
 <?php
 class Products {
-  protected $pdo;
+    public function __construct(private PDO $pdo) {}
 
-  public function __construct(\PDO $pdo) {
-    $this->pdo = $pdo;
-  }
+    public function getAll(): array {
+        $stmt = $this->pdo->prepare("CALL getProducts()");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 
-  public function getProducts() {
-    $stmt = $this->pdo->prepare("CALL getProducts()");
-    $stmt->execute();
-    return $stmt->fetchAll();
-  }
-  
-  public function insertProduct() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id, $dt->fname, $dt->lname, $dt->dob];
-    $stmt = $this->pdo->prepare("CALL insertProduct(?, ?, ?, ?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function getById(int $id): ?array {
+        $stmt = $this->pdo->prepare("CALL getProductById(?)");
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
 
-  public function updateProduct() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id, $dt->fname, $dt->mname, $dt->lname, $dt->extname, $dt->dob];
-    $stmt = $this->pdo->prepare("CALL updateProduct(?, ?, ?, ?, ?, ?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function insert(array $data): int {
+        $stmt = $this->pdo->prepare("CALL insertProduct(?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $data['supplier_id'],
+            $data['productName'],
+            $data['productSKU'],
+            $data['description'] ?? '',
+            $data['price'],
+        ]);
+        $result = $stmt->fetch();
+        return $result ? (int)$result['fld_product_id'] : 0;
+    }
 
-  public function deleteProduct() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id];
-    $stmt = $this->pdo->prepare("CALL deleteProduct(?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function update(int $id, array $data): bool {
+        $stmt = $this->pdo->prepare("CALL updateProduct(?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([
+            $id,
+            $data['supplier_id'],
+            $data['productName'],
+            $data['productSKU'],
+            $data['description'] ?? '',
+            $data['price'],
+        ]);
+    }
+
+    public function delete(int $id): bool {
+        $stmt = $this->pdo->prepare("CALL deleteProduct(?)");
+        return $stmt->execute([$id]);
+    }
 }

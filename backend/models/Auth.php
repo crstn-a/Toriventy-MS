@@ -1,67 +1,88 @@
 <?php
-use Firebase\JWT\jWT;
-use Firebase\JWT\key;
-
 class Auth {
-    protected $pdo;
+    private static string $secret = 'toriventy-secret-min-32-chars-ok';
 
-  public function __construct(\PDO $pdo) {
-    $this->pdo = $pdo;
-  }
+    public function __construct(private PDO $pdo) {}
 
-  public function login() {
-    echo $this->generateToken();
-    echo $this->generateJWT();
-  }
+    // ── Called by AuthController ─────────────────────────────────────────────
+    public function register(array $data): array {
+        $stmt = $this->pdo->prepare("CALL registerUser(?, ?, ?)");
+        $stmt->execute([
+            $data['username'],
+            $data['email'],
+            password_hash($data['password'], PASSWORD_BCRYPT),
+        ]);
+        $result = $stmt->fetch();
+        return $result ? ['user_id' => (int)$result['fld_user_id']] : [];
+    }
 
-  private function generateToken() {
-    $key = "a-string-secret-at-least-256-bit";
-    $header = $this->generateHeader();
-    $payload = $this->generatePayload();
-    $signature = "signatureGoesHere";
-    $signature = hash_hmac('sha256', "$header.$payload", "$key");
-    $signature = base64_encode($signature);
-    $signature = str_replace(["+", "/", "="], ["-", "_", ""], $signature);
-    return "$header.$payload.$signature";
-  }
+    public function login(string $email, string $password): array {
+        $stmt = $this->pdo->prepare("CALL getUserByEmail(?)");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
 
-  private function generateHeader() {
-    $h = [  
-        "alg" => "HS256",
-        "typ" => "JWT",
-        "app" => "Inventory App",
-        "dev" => "Toriventy Developers"
-    ];
-    $h = json_encode($h);
-    $h = base64_encode($h);
-    $h = str_replace(["+", "/", "="], ["-", "_", ""], $h);
-    return $h;
-  }
+        if (!$user || !password_verify($password, $user['fld_password_hash'])) {
+            error('Invalid email or password', 401);
+        }
 
-  private function generatePayload(){
-    $exp = time() + 60 * 60 * 24;
-    $p = [  
-        "iby" => "Inventory Management System",
-        "ie" => "toriventy.com",
-        "exp" => $exp
-    ];
-    $p = json_encode($p);
-    $p = base64_encode($p);
-    $p = str_replace(["+", "/", "="], ["-", "_", ""], $p);
-    return $p;
-  }
+        return [
+            'token' => self::generateJWT((int)$user['fld_user_id'], $user['fld_role']),
+            'user'  => [
+                'id'       => $user['fld_user_id'],
+                'username' => $user['fld_username'],
+                'email'    => $user['fld_email'],
+                'role'     => $user['fld_role'],
+            ],
+        ];
+    }
 
-  //using JWT Library
-  private function generateJWT(){
-    $exp = time() + 60 * 60 * 24;
-    $key = 'example_key_of_sufficient_length';
-    $p = [  
-        "iby" => "Inventory Management System",
-        "ie" => "toriventy.com",
-        "exp" => $exp
-    ];
-    $jwt = JWT::encode($p, $key, "HS256");
-    return $jwt;
-  }
+    public function findById(int $id): ?array {
+        $stmt = $this->pdo->prepare("CALL getUserById(?)");
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
 
+    public function updateProfile(int $id, array $data): void {
+        $stmt = $this->pdo->prepare("CALL updateUserProfile(?, ?, ?)");
+        $stmt->execute([$id, $data['username'], $data['email']]);
+    }
+
+    public function emailExists(string $email): bool {
+        $stmt = $this->pdo->prepare("CALL getUserByEmail(?)");
+        $stmt->execute([$email]);
+        return (bool) $stmt->fetch();
+    }
+
+    // ── JWT (fixed — was broken in original) ────────────────────────────────
+    public static function generateJWT(int $userId, string $role): string {
+        $header  = self::b64u(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
+        $payload = self::b64u(json_encode([
+            'sub'  => $userId,
+            'role' => $role,
+            'iat'  => time(),
+            'exp'  => time() + 86400,
+        ]));
+        // FIX: raw binary HMAC (true), then base64url — your original used hex HMAC
+        $sig = self::b64u(hash_hmac('sha256', "$header.$payload", self::$secret, true));
+        return "$header.$payload.$sig";
+    }
+
+    public static function verifyJWT(string $token): ?array {
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) return null;
+
+        [$header, $payload, $sig] = $parts;
+        $expected = self::b64u(hash_hmac('sha256', "$header.$payload", self::$secret, true));
+
+        if (!hash_equals($expected, $sig)) return null;
+
+        $data = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
+        if (!$data || ($data['exp'] ?? 0) < time()) return null;
+
+        return $data;
+    }
+
+    private static function b64u(string $data): string {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
 }

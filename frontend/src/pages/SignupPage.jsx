@@ -1,9 +1,10 @@
 // src/pages/SignupPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 import {
   Logo, Input, EyeIcon, CheckIcon, XIcon,
-  checkPassword, REGISTERED_USERS,
+  checkPassword,
 } from "../components/AuthForm";
 import { authStyles as s } from "../components/AuthStyles";
 
@@ -14,6 +15,7 @@ export default function SignupPage() {
   const [show, setShow]     = useState({ password: false, confirm: false });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const pwInfo       = checkPassword(form.password);
   const pwAccepted   = pwInfo.passed === 5;
@@ -39,12 +41,25 @@ export default function SignupPage() {
     return e;
   }
 
-  function handleSignup() {
+  async function handleSignup() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
-    // Replace this with your real API call
-    REGISTERED_USERS.push({ email: form.email, username: form.email, password: form.password });
-    setSuccess(true);
+
+    setLoading(true);
+    setErrors({});
+
+    try {
+      await api.post('/auth/register', {
+        username: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email,
+        password: form.password,
+      });
+      setSuccess(true);
+    } catch (err) {
+      setErrors({ form: err.message || 'Signup failed' });
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ── Success screen ──────────────────────────────────────────────────────────
@@ -218,9 +233,10 @@ export default function SignupPage() {
           </div>
         )}
         {errors.confirm && <p style={s.fieldErr}>{errors.confirm}</p>}
+        {errors.form && <p style={s.fieldErr}>{errors.form}</p>}
 
-        <button style={s.primaryBtn} onClick={handleSignup}>
-          Sign Up
+        <button style={s.primaryBtn} onClick={handleSignup} disabled={loading}>
+          {loading ? 'Signing up…' : 'Sign Up'}
         </button>
 
         <p style={s.footerText}>

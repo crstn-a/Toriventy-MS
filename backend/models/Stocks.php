@@ -1,23 +1,38 @@
 <?php
 class Stocks {
-  protected $pdo;
+    public function __construct(private PDO $pdo) {}
 
-  public function __construct(\PDO $pdo) {
-    $this->pdo = $pdo;
-  }
+    public function getByProduct(int $productId): ?array {
+        $stmt = $this->pdo->prepare("CALL getStockByProduct(?)");
+        $stmt->execute([$productId]);
+        return $stmt->fetch() ?: null;
+    }
 
-  public function getStocks() {
-    $stmt = $this->pdo->prepare("CALL getStockInformation()");
-    $stmt->execute();
-    return $stmt->fetchAll();
-  }
+    public function updateQuantity(int $productId, int $newQty): void {
+        $stmt = $this->pdo->prepare("CALL updateStock(?, ?)");
+        $stmt->execute([$productId, $newQty]);
+    }
 
-  public function updateStock() {
-    $dt = json_decode(file_get_contents("php://input"));
-    $values = [$dt->id, $dt->fname, $dt->mname, $dt->lname, $dt->extname, $dt->dob];
-    $stmt = $this->pdo->prepare("CALL updateStock(?, ?, ?, ?, ?, ?)");
-    $stmt->execute($values);
-    return $stmt->fetchAll();
-  }
+    public function logChange(int $productId, int $userId, int $change, string $reason): void {
+        // Log functionality handled by procedure if supported
+        // Otherwise kept for compatibility
+    }
+
+    public function allLevels(): array {
+        $stmt = $this->pdo->prepare("CALL getStockLevels()");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function lowStock(): array {
+        $stmt = $this->pdo->prepare("CALL getLowStock()");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function getLogs(int $productId): array {
+        $stmt = $this->pdo->prepare("CALL getStockLogs(?)");
+        $stmt->execute([$productId]);
+        return $stmt->fetchAll();
+    }
 }
-

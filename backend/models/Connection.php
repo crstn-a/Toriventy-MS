@@ -18,11 +18,21 @@ class Connection {
       \PDO::ATTR_STRINGIFY_FETCHES => false,
       \PDO::ATTR_PERSISTENT => false
     ];
+    
+    error_log("Attempting DB connection: host=" . SERVER . ", user=" . USER . ", db=" . DBASE);
    
     try {
       static::$conn = new \PDO($cnString, USER, PWORD, $options);
+      error_log("Database connection successful");
     } catch (\PDOException $er) {
-      echo "Connection Error" . $er->getMessage();
+      error_log("PDO Connection Error: " . $er->getMessage());
+      http_response_code(500);
+      echo json_encode([
+        'status' => 'error',
+        'message' => 'Database connection failed: ' . $er->getMessage(),
+        'data' => null
+      ]);
+      exit;
     }
     return static::$conn;
   }
