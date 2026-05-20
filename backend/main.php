@@ -38,14 +38,12 @@
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/config');
     $dotenv->load();
 
-    require_once __DIR__ . "/config/db.php";
-    require_once __DIR__ . "/helpers.php";
+    require_once __DIR__ . "/functions.php";
 
-    $db = new Database();
-    $pdo = $db->connect();
+    // Use Connection class in Models namespace to get PDO
+    $pdo = Models\Connection::getInstance();
 
-    $param = explode("/",rtrim($_GET['params'],"/"));
-
+    // Import controllers
     $method = $_SERVER['REQUEST_METHOD'];
     $uri = '/' . trim($_GET['params'] ?? '', '/');
 
@@ -54,92 +52,102 @@
 
     // AUTH
     if ($method === 'POST' && $uri === '/api/auth/login') {
-        (new AuthController($pdo))->login();
+        (new Controllers\AuthController($pdo))->login();
         exit;
     }
 
     if ($method === 'POST' && $uri === '/api/auth/register') {
-        (new AuthController($pdo))->register();
+        (new Controllers\AuthController($pdo))->register();
         exit;
     }
 
     // USERS
     if ($method === 'GET' && $uri === '/api/users/profile') {
-        (new AuthController($pdo))->profile();
+        (new Controllers\AuthController($pdo))->profile();
         exit;
     }
 
     if ($method === 'PUT' && $uri === '/api/users/profile') {
-        (new AuthController($pdo))->updateProfile();
+        (new Controllers\AuthController($pdo))->updateProfile();
         exit;
     }
 
     // PRODUCTS
     if ($method === 'GET' && $uri === '/api/products') {
-        (new ProductController($pdo))->index();
+        (new Controllers\ProductController($pdo))->index();
+        exit;
+    }
+
+    if ($method === 'GET' && $uri === '/api/admin/products') {
+        (new Controllers\ProductController($pdo))->adminIndex();
         exit;
     }
 
     if ($method === 'POST' && $uri === '/api/products') {
-        (new ProductController($pdo))->store();
+        (new Controllers\ProductController($pdo))->store();
         exit;
     }
 
     if ($method === 'GET' && preg_match('#^/api/products/(\d+)$#', $uri, $m)) {
-        (new ProductController($pdo))->show((int)$m[1]);
+        (new Controllers\ProductController($pdo))->show((int)$m[1]);
         exit;
     }
 
     if ($method === 'PUT' && preg_match('#^/api/products/(\d+)$#', $uri, $m)) {
-        (new ProductController($pdo))->update((int)$m[1]);
+        (new Controllers\ProductController($pdo))->update((int)$m[1]);
         exit;
     }
 
     if ($method === 'DELETE' && preg_match('#^/api/products/(\d+)$#', $uri, $m)) {
-        (new ProductController($pdo))->destroy((int)$m[1]);
+        (new Controllers\ProductController($pdo))->destroy((int)$m[1]);
         exit;
     }
 
     // STOCK
     if ($method === 'POST' && $uri === '/api/stock/update') {
-        (new StockController($pdo))->update();
+        (new Controllers\StockController($pdo))->update();
         exit;
     }
 
     if ($method === 'GET' && preg_match('#^/api/stock/(\d+)$#', $uri, $m)) {
-        (new StockController($pdo))->show((int)$m[1]);
+        (new Controllers\StockController($pdo))->show((int)$m[1]);
         exit;
     }
 
     // SUPPLIERS
     if ($method === 'GET' && $uri === '/api/suppliers') {
-        (new SupplierController($pdo))->index();
+        (new Controllers\SupplierController($pdo))->index();
+        exit;
+    }
+
+    if ($method === 'GET' && $uri === '/api/admin/suppliers') {
+        (new Controllers\SupplierController($pdo))->adminIndex();
         exit;
     }
 
     if ($method === 'POST' && $uri === '/api/suppliers') {
-        (new SupplierController($pdo))->store();
+        (new Controllers\SupplierController($pdo))->store();
         exit;
     }
 
     if ($method === 'PUT' && preg_match('#^/api/suppliers/(\d+)$#', $uri, $m)) {
-        (new SupplierController($pdo))->update((int)$m[1]);
+        (new Controllers\SupplierController($pdo))->update((int)$m[1]);
         exit;
     }
 
     if ($method === 'DELETE' && preg_match('#^/api/suppliers/(\d+)$#', $uri, $m)) {
-        (new SupplierController($pdo))->destroy((int)$m[1]);
+        (new Controllers\SupplierController($pdo))->destroy((int)$m[1]);
         exit;
     }
 
     // REPORTS
     if ($method === 'GET' && $uri === '/api/reports/stock-levels') {
-        (new ReportController($pdo))->stockLevels();
+        (new Controllers\ReportController($pdo))->stockLevels();
         exit;
     }
 
     if ($method === 'GET' && $uri === '/api/reports/low-stock') {
-        (new ReportController($pdo))->lowStock();
+        (new Controllers\ReportController($pdo))->lowStock();
         exit;
     }
 

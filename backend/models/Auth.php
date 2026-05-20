@@ -1,10 +1,13 @@
 <?php
+namespace Models;
+
+use PDO;
+
 class Auth {
     private static string $secret = 'toriventy-secret-min-32-chars-ok';
 
     public function __construct(private PDO $pdo) {}
 
-    // ── Called by AuthController ─────────────────────────────────────────────
     public function register(array $data): array {
         $stmt = $this->pdo->prepare(
             "INSERT INTO tbl_users (fld_username, fld_email, fld_password_hash) VALUES (?, ?, ?)"

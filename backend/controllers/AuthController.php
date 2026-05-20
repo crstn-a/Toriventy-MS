@@ -1,4 +1,9 @@
 <?php
+namespace Controllers;
+
+use Models\Auth;
+use PDO;
+
 class AuthController {
     private Auth $auth;
 

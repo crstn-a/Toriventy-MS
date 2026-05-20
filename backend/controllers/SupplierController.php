@@ -1,4 +1,9 @@
 <?php
+namespace Controllers;
+
+use Models\Suppliers;
+use PDO;
+
 class SupplierController {
     private Suppliers $model;
 
@@ -11,11 +16,15 @@ class SupplierController {
         success('Suppliers retrieved', $this->model->getAll());
     }
 
+    public function adminIndex(): void {
+        requireAdmin();
+        success('Admin suppliers retrieved', $this->model->getAll());
+    }
+
     public function store(): void {
         requireAdmin();
         $body   = json_decode(file_get_contents('php://input'), true) ?? [];
         $errors = validate($body, [
-            'supplier_id'      => 'required',
             'supplierName'     => 'required',
             'supplierPhoneNum' => 'required',
             'supplierEmail'    => 'required|email',

@@ -1,4 +1,9 @@
 <?php
+namespace Controllers;
+
+use Models\Stocks;
+use PDO;
+
 class ReportController {
     private Stocks $model;
 

@@ -1,4 +1,9 @@
 <?php
+namespace Controllers;
+
+use Models\Products;
+use PDO;
+
 class ProductController {
     private Products $model;
 
@@ -7,10 +12,17 @@ class ProductController {
     }
 
     public function index(): void {
+        requireAuth();
         success('Products retrieved', $this->model->getAll());
     }
 
+    public function adminIndex(): void {
+        requireAdmin();
+        success('Admin products retrieved', $this->model->getAll());
+    }
+
     public function show(int $id): void {
+        requireAuth();
         $product = $this->model->getById($id);
         if (!$product) error('Product not found', 404);
         success('Product retrieved', $product);

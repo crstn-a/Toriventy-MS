@@ -1,6 +1,8 @@
-<ifModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^(.*)$ main.php?params=$1 [QSA,L]
-</ifModule>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^public/api/(.*)$ main.php?params=api/$1 [QSA,L]
+    RewriteRule ^api/(.*)$ main.php?params=api/$1 [QSA,L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ main.php?params=$1 [QSA,L]
+</IfModule>

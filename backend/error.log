@@ -8,3 +8,81 @@ Stack trace:
 [06-May-2026 12:02:06 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
 [06-May-2026 12:07:35 UTC] Method: POST, URI: /api/auth/register, Params: api/auth/register
 [06-May-2026 12:07:48 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:02:50 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:02:50 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:07:17 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:21:03 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:22:22 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:24:15 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:26:54 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:27:05 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[07-May-2026 13:27:05 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function verifyJWT() in D:\laragon\www\Toriventy\backend\helpers.php:49
+Stack trace:
+#0 D:\laragon\www\Toriventy\backend\controllers\AuthController.php(37): requireAuth()
+#1 D:\laragon\www\Toriventy\backend\main.php(68): AuthController->profile()
+#2 {main}
+  thrown in D:\laragon\www\Toriventy\backend\helpers.php on line 49
+[07-May-2026 13:27:19 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[07-May-2026 13:27:19 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function verifyJWT() in D:\laragon\www\Toriventy\backend\helpers.php:49
+Stack trace:
+#0 D:\laragon\www\Toriventy\backend\controllers\AuthController.php(37): requireAuth()
+#1 D:\laragon\www\Toriventy\backend\main.php(68): AuthController->profile()
+#2 {main}
+  thrown in D:\laragon\www\Toriventy\backend\helpers.php on line 49
+[07-May-2026 13:27:43 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[07-May-2026 13:27:43 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function verifyJWT() in D:\laragon\www\Toriventy\backend\helpers.php:49
+Stack trace:
+#0 D:\laragon\www\Toriventy\backend\controllers\AuthController.php(37): requireAuth()
+#1 D:\laragon\www\Toriventy\backend\main.php(68): AuthController->profile()
+#2 {main}
+  thrown in D:\laragon\www\Toriventy\backend\helpers.php on line 49
+[07-May-2026 13:28:26 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[07-May-2026 13:28:41 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:28:43 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[07-May-2026 13:32:30 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 13:35:47 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 15:07:09 UTC] Method: POST, URI: /api/auth/register, Params: api/auth/register
+[07-May-2026 15:07:30 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 15:08:24 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[07-May-2026 15:08:44 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[19-May-2026 13:07:23 UTC] PHP Error [2]: file_get_contents(D:\laragon\www\Toriventy\backend/config\.env): Failed to open stream: No such file or directory in D:\laragon\www\Toriventy\backend\vendor\vlucas\phpdotenv\src\Store\File\Reader.php:73
+[20-May-2026 14:16:55 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:17:18 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:17:26 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:17:46 UTC] Method: POST, URI: /api/auth/register, Params: api/auth/register
+[20-May-2026 14:18:17 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:18:21 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:18:21 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:24 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:20:24 UTC] Method: GET, URI: /api/admin/suppliers, Params: api/admin/suppliers
+[20-May-2026 14:20:24 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:24 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:20:26 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:28 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:20:30 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:31 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:20:35 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:20:35 UTC] Method: GET, URI: /api/admin/suppliers, Params: api/admin/suppliers
+[20-May-2026 14:20:35 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:20:35 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:38 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:41 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:20:43 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:20:43 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:20:47 UTC] Method: GET, URI: /api/users/profile, Params: api/users/profile
+[20-May-2026 14:20:57 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:20:57 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:20:57 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:20:57 UTC] Method: GET, URI: /api/admin/suppliers, Params: api/admin/suppliers
+[20-May-2026 14:27:22 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:27:22 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:27:22 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:27:22 UTC] Method: GET, URI: /api/admin/suppliers, Params: api/admin/suppliers
+[20-May-2026 14:27:30 UTC] Method: POST, URI: /api/auth/login, Params: api/auth/login
+[20-May-2026 14:27:30 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:27:30 UTC] Method: GET, URI: /api/admin/suppliers, Params: api/admin/suppliers
+[20-May-2026 14:27:30 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock
+[20-May-2026 14:27:32 UTC] Method: GET, URI: /api/products, Params: api/products
+[20-May-2026 14:27:33 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:27:34 UTC] Method: GET, URI: /api/reports/stock-levels, Params: api/reports/stock-levels
+[20-May-2026 14:27:34 UTC] Method: GET, URI: /api/reports/low-stock, Params: api/reports/low-stock

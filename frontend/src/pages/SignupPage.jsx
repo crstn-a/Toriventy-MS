@@ -11,7 +11,7 @@ import { authStyles as s } from "../components/AuthStyles";
 export default function SignupPage() {
   const navigate = useNavigate();
 
-  const [form, setForm]     = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "" });
+  const [form, setForm]     = useState({ firstName: "", lastName: "", email: "", phone: "", password: "", confirm: "" });
   const [show, setShow]     = useState({ password: false, confirm: false });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
@@ -52,6 +52,7 @@ export default function SignupPage() {
       await api.post('/auth/register', {
         username: `${form.firstName} ${form.lastName}`.trim(),
         email: form.email,
+        phone: form.phone,
         password: form.password,
       });
       setSuccess(true);
@@ -130,6 +131,14 @@ export default function SignupPage() {
           error={!!errors.email}
         />
         {errors.email && <p style={s.fieldErr}>{errors.email}</p>}
+
+        {/* Phone */}
+        <Input
+          label="Phone Number"
+          type="tel"
+          value={form.phone}
+          onChange={setField("phone")}
+        />
 
         {/* Create password */}
         <Input

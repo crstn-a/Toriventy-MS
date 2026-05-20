@@ -2,7 +2,7 @@
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
-  'http://localhost/Toriventy/backend/api';
+  'http://localhost/Toriventy/backend/public/api';
 
 // Helper to attach JWT
 const getHeaders = () => {

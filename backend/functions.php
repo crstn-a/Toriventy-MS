@@ -1,4 +1,6 @@
 <?php
+use Models\Auth;
+
 // ─── Response ────────────────────────────────────────────────────────────────
 function respond(string $status, string $message, mixed $data, int $code): void {
     header('Content-Type: application/json; charset=utf-8');
@@ -21,7 +23,7 @@ function validate(array $body, array $rules): array {
     foreach ($rules as $field => $checks) {
         $value = $body[$field] ?? null;
         foreach (explode('|', $checks) as $rule) {
-            if ($rule === 'required' && empty($value)) {
+            if ($rule === 'required' && (is_null($value) || $value === '')) {
                 $errors[$field] = "$field is required";
             } elseif ($rule === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                 $errors[$field] = "$field must be a valid email";
@@ -46,7 +48,7 @@ function requireAuth(): array {
         error('Unauthorized — no token provided', 401);
     }
 
-    $payload = verifyJWT(substr($auth, 7));
+    $payload = Auth::verifyJWT(substr($auth, 7));
     if (!$payload) {
         error('Unauthorized — invalid or expired token', 401);
     }

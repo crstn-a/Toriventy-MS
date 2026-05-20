@@ -1,4 +1,8 @@
 <?php
+namespace Models;
+
+use PDO;
+
 class Suppliers {
     public function __construct(private PDO $pdo) {}
 
@@ -8,19 +12,18 @@ class Suppliers {
         return $stmt->fetchAll();
     }
 
-    // Data comes in from the controller — not read from php://input here
     public function insert(array $data): array {
+        // Procedure signature: insertSupplierInformation(supplierName, supplierPhoneNum, supplierEmail, supplierAddress) (4 parameters)
         $stmt = $this->pdo->prepare(
-            "CALL insertSupplierInformation(?, ?, ?, ?, ?)"
+            "CALL insertSupplierInformation(?, ?, ?, ?)"
         );
         $stmt->execute([
-            $data['supplier_id'],
             $data['supplierName'],
             $data['supplierPhoneNum'],
             $data['supplierEmail'],
             $data['supplierAddress'],
         ]);
-        return $stmt->fetchAll();
+        return $stmt->fetch() ?: [];
     }
 
     public function update(int $id, array $data): bool {

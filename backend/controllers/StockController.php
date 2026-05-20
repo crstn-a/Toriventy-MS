@@ -1,4 +1,9 @@
 <?php
+namespace Controllers;
+
+use Models\Stocks;
+use PDO;
+
 class StockController {
     private Stocks $model;
 
@@ -31,9 +36,13 @@ class StockController {
         $newQty = $current['fld_quantity'] + $change;
         if ($newQty < 0) error('Insufficient stock', 400);
 
-        $this->model->updateQuantity($productId, $newQty);
-        $this->model->logChange($productId, (int)$payload['sub'], $change, $body['reason'] ?? '');
+        // Call the model updateQuantity which invokes updateStock(product_id, user_id, change, reason) stored procedure
+        $result = $this->model->updateQuantity($productId, (int)$payload['sub'], $change, $body['reason'] ?? '');
 
-        success('Stock updated', ['product_id' => $productId, 'new_quantity' => $newQty]);
+        success('Stock updated', [
+            'product_id' => $productId,
+            'previous_quantity' => $result['previous_quantity'] ?? $current['fld_quantity'],
+            'new_quantity' => $result['new_quantity'] ?? $newQty
+        ]);
     }
 }

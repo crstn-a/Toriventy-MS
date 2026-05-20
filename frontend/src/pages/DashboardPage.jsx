@@ -1,593 +1,173 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const sampleProducts = [
-  { product_id: 1, productName: "Wireless Mouse", productDescription: "Electronics", price: "₱1,412", supplier_id: "SP001" },
-  { product_id: 2, productName: "Monitor Stand", productDescription: "Furniture", price: "₱1,412", supplier_id: "SP030" },
-  { product_id: 3, productName: "Monitor Stand", productDescription: "Furniture", price: "₱1,412", supplier_id: "SP030" },
-  { product_id: 4, productName: "Monitor Stand", productDescription: "Furniture", price: "₱1,412", supplier_id: "SP030" },
-  { product_id: 5, productName: "Monitor Stand", productDescription: "Furniture", price: "₱1,412", supplier_id: "SP030" },
-  { product_id: 6, productName: "Monitor Stand", productDescription: "Furniture", price: "₱1,412", supplier_id: "SP030" },
-];
-
-const sampleSuppliers = [
-  { id: "SP001", name: "OneSource", category: "Electronics", contact: "0917-123-4567" },
-  { id: "SP030", name: "FurniPlus", category: "Furniture", contact: "0917-987-6543" },
-  { id: "SP045", name: "OfficeCore", category: "Office", contact: "0917-555-7788" },
-];
-
-const sampleStocks = [
-  { id: 1, productName: "Wireless Mouse", quantity: 43, unit: "pcs", reorder: 20, status: "In Stock" },
-  { id: 2, productName: "Monitor Stand", quantity: 82, unit: "pcs", reorder: 30, status: "In Stock" },
-  { id: 3, productName: "Keyboard", quantity: 12, unit: "pcs", reorder: 25, status: "Low Stock" },
-  { id: 4, productName: "Webcam", quantity: 7, unit: "pcs", reorder: 10, status: "Low Stock" },
-  { id: 5, productName: "Office Chair", quantity: 34, unit: "pcs", reorder: 15, status: "In Stock" },
-];
+import api from "../api";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard" },
   { id: "products", label: "Products" },
   { id: "suppliers", label: "Suppliers" },
   { id: "stocks", label: "Stocks" },
+  { id: "reports", label: "Reports" },
+  { id: "profile", label: "Profile" },
 ];
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f8fafc",
-    display: "flex",
-    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-    color: "#0f172a",
-  },
-  sidebar: {
-    width: 260,
-    background: "#0f172a",
-    color: "#fff",
-    padding: "28px 20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 22,
-  },
-  logoBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 22,
-  },
-  sidebarLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: "50%",
-    background: "#2563eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 12px 24px rgba(15,23,42,.25)",
-    fontWeight: 700,
-    fontSize: 18,
-  },
-  navItem: (active) => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    padding: "12px 16px",
-    borderRadius: 14,
-    cursor: "pointer",
-    background: active ? "rgba(255,255,255,.12)" : "transparent",
-    color: active ? "#fff" : "#cbd5e1",
-    fontWeight: active ? 700 : 500,
-    fontSize: 15,
-  }),
-  navItemLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  content: {
-    flex: 1,
-    padding: "32px 40px",
-  },
-  headerRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    marginBottom: 22,
-  },
-  headerTitle: {
-    fontSize: 34,
-    margin: 0,
-    letterSpacing: "-.5px",
-  },
-  topInfo: {
-    marginBottom: 16,
-    color: "#475569",
-    fontSize: 14,
-  },
-  searchInput: {
-    width: 320,
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid #cbd5e1",
-    fontSize: 14,
-    outline: "none",
-    background: "#fff",
-    color: "#0f172a",
-  },
-  pageButton: {
-    minWidth: 38,
-    height: 38,
-    borderRadius: 12,
-    border: "1px solid #cbd5e1",
-    background: "#fff",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  editInput: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    fontSize: 14,
-    outline: "none",
-    background: "#fff",
-    color: "#0f172a",
-  },
-  pageInput: {
-    width: 64,
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    background: "#fff",
-    color: "#0f172a",
-    fontSize: 14,
-    textAlign: "center",
-    outline: "none",
-  },
-  addForm: {
-    background: "#fff",
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 22,
-    boxShadow: "0 20px 50px rgba(15,23,42,.08)",
-  },
-  formInput: {
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid #cbd5e1",
-    fontSize: 14,
-    outline: "none",
-    background: "#fff",
-    color: "#0f172a",
-  },
-  saveButton: {
-    padding: "12px 18px",
-    borderRadius: 12,
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  addButton: {
-    padding: "12px 18px",
-    borderRadius: 12,
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  tableWrapper: {
-    borderRadius: 20,
-    overflow: "hidden",
-    boxShadow: "0 20px 50px rgba(15,23,42,.08)",
-    background: "#fff",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  th: {
-    textAlign: "left",
-    padding: "16px 20px",
-    fontSize: 13,
-    textTransform: "uppercase",
-    letterSpacing: ".06em",
-    color: "#475569",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  td: {
-    padding: "16px 20px",
-    fontSize: 14,
-    color: "#0f172a",
-    borderBottom: "1px solid #f1f5f9",
-  },
-  rowEven: {
-    background: "#f8fafc",
-  },
-  actionBtn: {
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    color: "#2563eb",
-    fontWeight: 600,
-    marginRight: 10,
-  },
-  smallMetric: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "14px 18px",
-    borderRadius: 18,
-    background: "#fff",
-    boxShadow: "0 12px 24px rgba(15,23,42,.06)",
-    flex: "1 1 200px",
-    minWidth: 200,
-  },
-  metricLabel: {
-    fontSize: 13,
-    color: "#64748b",
-    marginBottom: 6,
-  },
-  metricValue: {
-    fontSize: 24,
-    fontWeight: 700,
-    color: "#0f172a",
-  },
-  logoutBtn: {
-    marginTop: "auto",
-    border: "1px solid rgba(255,255,255,.2)",
-    borderRadius: 12,
-    padding: "12px 14px",
-    background: "transparent",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
+const S = {
+  page: { minHeight: "100vh", background: "#f8fafc", display: "flex", fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#0f172a" },
+  sidebar: { width: 260, background: "#0f172a", color: "#fff", padding: "28px 20px", display: "flex", flexDirection: "column", gap: 22 },
+  logoBox: { display: "flex", alignItems: "center", gap: 12, marginBottom: 22 },
+  sidebarLogo: { width: 38, height: 38, borderRadius: "50%", background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 18 },
+  navItem: (a) => ({ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 14, cursor: "pointer", background: a ? "rgba(255,255,255,.12)" : "transparent", color: a ? "#fff" : "#cbd5e1", fontWeight: a ? 700 : 500, fontSize: 15 }),
+  content: { flex: 1, padding: "32px 40px", overflowY: "auto" },
+  headerTitle: { fontSize: 34, margin: 0, letterSpacing: "-.5px" },
+  topInfo: { marginBottom: 16, color: "#475569", fontSize: 14 },
+  searchInput: { width: 320, padding: "12px 14px", borderRadius: 12, border: "1px solid #cbd5e1", fontSize: 14, outline: "none", background: "#fff", color: "#0f172a" },
+  tableWrapper: { borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 50px rgba(15,23,42,.08)", background: "#fff" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: { textAlign: "left", padding: "16px 20px", fontSize: 13, textTransform: "uppercase", letterSpacing: ".06em", color: "#475569", borderBottom: "1px solid #e2e8f0" },
+  td: { padding: "16px 20px", fontSize: 14, color: "#0f172a", borderBottom: "1px solid #f1f5f9" },
+  rowEven: { background: "#f8fafc" },
+  actionBtn: { border: "none", background: "transparent", cursor: "pointer", color: "#2563eb", fontWeight: 600, marginRight: 10 },
+  addButton: { padding: "12px 18px", borderRadius: 12, border: "none", background: "#2563eb", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  formInput: { padding: "12px 14px", borderRadius: 12, border: "1px solid #cbd5e1", fontSize: 14, outline: "none", background: "#fff", color: "#0f172a", width: "100%", boxSizing: "border-box" },
+  addForm: { background: "#fff", borderRadius: 20, padding: 24, marginBottom: 22, boxShadow: "0 20px 50px rgba(15,23,42,.08)" },
+  saveButton: { padding: "12px 18px", borderRadius: 12, border: "none", background: "#2563eb", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  metric: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "14px 18px", borderRadius: 18, background: "#fff", boxShadow: "0 12px 24px rgba(15,23,42,.06)", flex: "1 1 200px", minWidth: 200 },
+  metricLabel: { fontSize: 13, color: "#64748b", marginBottom: 6 },
+  metricValue: { fontSize: 24, fontWeight: 700, color: "#0f172a" },
+  logoutBtn: { marginTop: "auto", border: "1px solid rgba(255,255,255,.2)", borderRadius: 12, padding: "12px 14px", background: "transparent", color: "#fff", cursor: "pointer", fontWeight: 600 },
+  badge: (status) => ({ padding: "6px 12px", borderRadius: 999, fontSize: 13, fontWeight: 600, display: "inline-block", background: status === "low" || status === "out_of_stock" ? "#fee2e2" : "#dcfce7", color: status === "low" || status === "out_of_stock" ? "#b91c1c" : "#166534" }),
 };
 
 function NavIcon({ id, active }) {
-  const common = { width: 18, height: 18, stroke: active ? "#fff" : "#94a3b8", strokeWidth: 2, fill: "none" };
-  switch (id) {
-    case "dashboard":
-      return (
-        <svg viewBox="0 0 24 24" {...common}>
-          <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-13v5h6V4h-6Z" />
-        </svg>
-      );
-    case "products":
-      return (
-        <svg viewBox="0 0 24 24" {...common}>
-          <rect x="3" y="4" width="18" height="16" rx="2" />
-          <path d="M3 9h18" />
-          <path d="M8 13h3" />
-          <path d="M13 16h5" />
-        </svg>
-      );
-    case "suppliers":
-      return (
-        <svg viewBox="0 0 24 24" {...common}>
-          <circle cx="12" cy="8" r="3" />
-          <path d="M5 20c0-3.5 2.7-6 7-6s7 2.5 7 6" />
-        </svg>
-      );
-    case "stocks":
-      return (
-        <svg viewBox="0 0 24 24" {...common}>
-          <path d="M4 16h4V8H4v8Zm6 0h4V4h-4v12Zm6 0h4v-6h-4v6Z" />
-        </svg>
-      );
-    default:
-      return null;
-  }
+  const c = { width: 18, height: 18, stroke: active ? "#fff" : "#94a3b8", strokeWidth: 2, fill: "none" };
+  const icons = {
+    dashboard: <svg viewBox="0 0 24 24" {...c}><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-13v5h6V4h-6Z" /></svg>,
+    products: <svg viewBox="0 0 24 24" {...c}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" /><path d="M8 13h3" /></svg>,
+    suppliers: <svg viewBox="0 0 24 24" {...c}><circle cx="12" cy="8" r="3" /><path d="M5 20c0-3.5 2.7-6 7-6s7 2.5 7 6" /></svg>,
+    stocks: <svg viewBox="0 0 24 24" {...c}><path d="M4 16h4V8H4v8Zm6 0h4V4h-4v12Zm6 0h4v-6h-4v6Z" /></svg>,
+    reports: <svg viewBox="0 0 24 24" {...c}><path d="M3 3v18h18" /><path d="M7 16l4-4 4 4 5-6" /></svg>,
+    profile: <svg viewBox="0 0 24 24" {...c}><circle cx="12" cy="7" r="4" /><path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2" /></svg>,
+  };
+  return icons[id] || null;
 }
 
-function SectionHeader({ title, subtitle }) {
+/* ── Dashboard Overview Panel ───────────────────────────────── */
+function DashboardOverview() {
+  const [stats, setStats] = useState({ products: 0, suppliers: 0, lowStock: 0 });
+  const role = localStorage.getItem("role");
+
+  useEffect(() => {
+    Promise.all([api.get("/products"), api.get("/admin/suppliers"), api.get("/reports/low-stock")])
+      .then(([p, s, l]) => setStats({ products: (p.data || []).length, suppliers: (s.data || []).length, lowStock: (l.data || []).length }))
+      .catch(() => { });
+  }, []);
   return (
     <>
-      <div style={styles.headerRow}>
-        <div>
-          <h1 style={styles.headerTitle}>{title}</h1>
-          <div style={styles.topInfo}>{subtitle}</div>
-        </div>
+      <div><h1 style={S.headerTitle}>{role === 'admin' ? 'Admin Dashboard' : 'Dashboard'}</h1><div style={S.topInfo}>Quick overview of your inventory.</div></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 18 }}>
+        <div style={S.metric}><div><div style={S.metricLabel}>Total products</div><div style={S.metricValue}>{stats.products}</div></div></div>
+        <div style={S.metric}><div><div style={S.metricLabel}>Active suppliers</div><div style={S.metricValue}>{stats.suppliers}</div></div></div>
+        <div style={S.metric}><div><div style={S.metricLabel}>Low stock items</div><div style={S.metricValue}>{stats.lowStock}</div></div></div>
       </div>
     </>
   );
 }
 
-function ProductsTable({ products, search, onSearch, page, onPageChange, pageSize, onSaveProduct, onAddProduct }) {
-  const [editingId, setEditingId] = useState(null);
-  const [editValues, setEditValues] = useState({
-    productName: "",
-    productDescription: "",
-    price: "",
-    supplier_id: "",
-  });
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    productName: "",
-    productDescription: "",
-    price: "",
-    supplier_id: "",
-  });
+/* ── Products Panel ─────────────────────────────────────────── */
+function ProductsPanel() {
+  const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ supplier_id: "", name: "", sku: "", description: "", price: "", low_stock_threshold: "10" });
+  const [error, setError] = useState("");
+  const role = localStorage.getItem("role");
 
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return products;
-    return products.filter((product) =>
-      [product.productName, product.productDescription, product.supplier_id]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
+  useEffect(() => { api.get("/products").then(r => setProducts(r.data || [])).catch(() => { }); }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(p => [p.fld_productName, p.fld_productSKU, p.fld_supplierName].join(" ").toLowerCase().includes(q));
   }, [products, search]);
 
-  const total = filteredProducts.length;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-  const pageProducts = filteredProducts.slice(start - 1, end);
-
-  function handlePageClick(targetPage) {
-    if (targetPage >= 1 && targetPage <= pageCount) {
-      onPageChange(targetPage);
-    }
-  }
-
-  function startEditing(product) {
-    setEditingId(product.product_id);
-    setEditValues({
-      productName: product.productName,
-      productDescription: product.productDescription,
-      price: product.price,
-      supplier_id: product.supplier_id,
-    });
-  }
-
-  function saveEditing() {
-    if (editingId !== null) {
-      onSaveProduct(editingId, editValues);
-      setEditingId(null);
-    }
-  }
-
-  function cancelEditing() {
-    setEditingId(null);
-  }
-
-  function handleAddClick() {
-    setIsAddingProduct(true);
-  }
-
-  function handleAddSubmit(e) {
-    e.preventDefault();
-    if (newProduct.productName && newProduct.productDescription && newProduct.price && newProduct.supplier_id) {
-      onAddProduct(newProduct);
-      setNewProduct({
-        productName: "",
-        productDescription: "",
-        price: "",
-        supplier_id: "",
-      });
-      setIsAddingProduct(false);
-    }
-  }
-
-  function handleAddCancel() {
-    setNewProduct({
-      productName: "",
-      productDescription: "",
-      price: "",
-      supplier_id: "",
-    });
-    setIsAddingProduct(false);
+  async function handleAdd(e) {
+    e.preventDefault(); setError("");
+    try {
+      const res = await api.post("/products", form);
+      setProducts(prev => [...prev, res.data]);
+      setForm({ supplier_id: "", name: "", sku: "", description: "", price: "", low_stock_threshold: "10" });
+      setAdding(false);
+      api.get("/products").then(r => setProducts(r.data || []));
+    } catch (err) { setError(err.message); }
   }
 
   return (
     <>
-      <div style={styles.headerRow}>
-        <div>
-          <h1 style={styles.headerTitle}>Products</h1>
-          <div style={styles.topInfo}>Manage your product catalog and supplier listings from one dashboard.</div>
-        </div>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <input
-            type="search"
-            placeholder="Search Product"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            style={styles.searchInput}
-          />
-          <button style={styles.addButton} onClick={handleAddClick}>+ Add Product</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+        <div><h1 style={S.headerTitle}>Products</h1><div style={S.topInfo}>Manage your product catalog.</div></div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <input type="search" placeholder="Search Product" value={search} onChange={e => setSearch(e.target.value)} style={S.searchInput} />
+          {role === "admin" && <button style={S.addButton} onClick={() => setAdding(!adding)}>+ Add Product</button>}
         </div>
       </div>
-
-      {isAddingProduct && (
-        <div style={styles.addForm}>
-          <h3 style={{ margin: "0 0 16px 0", fontSize: 18 }}>Add New Product</h3>
-          <form onSubmit={handleAddSubmit} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-            <input
-              type="text"
-              placeholder="Product Name"
-              value={newProduct.productName}
-              onChange={(e) => setNewProduct((prev) => ({ ...prev, productName: e.target.value }))}
-              style={styles.formInput}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Description"
-              value={newProduct.productDescription}
-              onChange={(e) => setNewProduct((prev) => ({ ...prev, productDescription: e.target.value }))}
-              style={styles.formInput}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Price (e.g., ₱1,412)"
-              value={newProduct.price}
-              onChange={(e) => setNewProduct((prev) => ({ ...prev, price: e.target.value }))}
-              style={styles.formInput}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Supplier ID (e.g., SP001)"
-              value={newProduct.supplier_id}
-              onChange={(e) => setNewProduct((prev) => ({ ...prev, supplier_id: e.target.value }))}
-              style={styles.formInput}
-              required
-            />
-            <div style={{ display: "flex", gap: 12, gridColumn: "1 / -1" }}>
-              <button type="submit" style={styles.saveButton}>Add Product</button>
-              <button type="button" style={{ ...styles.saveButton, background: "#dc2626" }} onClick={handleAddCancel}>Cancel</button>
+      {adding && (
+        <div style={S.addForm}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 18 }}>Add New Product</h3>
+          {error && <p style={{ color: "#ef4444", marginBottom: 12, fontSize: 13 }}>{error}</p>}
+          <form onSubmit={handleAdd} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
+            <input placeholder="Supplier ID" value={form.supplier_id} onChange={e => setForm(f => ({ ...f, supplier_id: e.target.value }))} style={S.formInput} required />
+            <input placeholder="Product Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={S.formInput} required />
+            <input placeholder="SKU" value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} style={S.formInput} required />
+            <input placeholder="Price" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} style={S.formInput} required />
+            <input placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={S.formInput} />
+            <input placeholder="Low Stock Threshold" value={form.low_stock_threshold} onChange={e => setForm(f => ({ ...f, low_stock_threshold: e.target.value }))} style={S.formInput} />
+            <div style={{ display: "flex", gap: 12, gridColumn: "1/-1" }}>
+              <button type="submit" style={S.saveButton}>Add Product</button>
+              <button type="button" style={{ ...S.saveButton, background: "#dc2626" }} onClick={() => setAdding(false)}>Cancel</button>
             </div>
           </form>
         </div>
       )}
-
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
+      <div style={S.tableWrapper}>
+        <table style={S.table}>
           <thead style={{ background: "#f1f5f9" }}>
-            <tr>
-              <th style={styles.th}>product_id</th>
-              <th style={styles.th}>productName</th>
-              <th style={styles.th}>productDescription</th>
-              <th style={styles.th}>price</th>
-              <th style={styles.th}>supplier_id</th>
-              <th style={styles.th}>Action</th>
-            </tr>
+            <tr><th style={S.th}>ID</th><th style={S.th}>Name</th><th style={S.th}>SKU</th><th style={S.th}>Price</th><th style={S.th}>Supplier</th><th style={S.th}>Qty</th></tr>
           </thead>
           <tbody>
-            {pageProducts.map((product, index) => (
-              <tr key={product.product_id} style={index % 2 === 0 ? styles.rowEven : undefined}>
-                <td style={styles.td}>{product.product_id}</td>
-                <td style={styles.td}>
-                  {editingId === product.product_id ? (
-                    <input
-                      value={editValues.productName}
-                      onChange={(e) => setEditValues((prev) => ({ ...prev, productName: e.target.value }))}
-                      style={styles.editInput}
-                    />
-                  ) : (
-                    product.productName
-                  )}
-                </td>
-                <td style={styles.td}>
-                  {editingId === product.product_id ? (
-                    <input
-                      value={editValues.productDescription}
-                      onChange={(e) => setEditValues((prev) => ({ ...prev, productDescription: e.target.value }))}
-                      style={styles.editInput}
-                    />
-                  ) : (
-                    product.productDescription
-                  )}
-                </td>
-                <td style={styles.td}>
-                  {editingId === product.product_id ? (
-                    <input
-                      value={editValues.price}
-                      onChange={(e) => setEditValues((prev) => ({ ...prev, price: e.target.value }))}
-                      style={styles.editInput}
-                    />
-                  ) : (
-                    product.price
-                  )}
-                </td>
-                <td style={styles.td}>
-                  {editingId === product.product_id ? (
-                    <input
-                      value={editValues.supplier_id}
-                      onChange={(e) => setEditValues((prev) => ({ ...prev, supplier_id: e.target.value }))}
-                      style={styles.editInput}
-                    />
-                  ) : (
-                    product.supplier_id
-                  )}
-                </td>
-                <td style={styles.td}>
-                  {editingId === product.product_id ? (
-                    <>
-                      <button type="button" style={styles.actionBtn} onClick={saveEditing}>Save</button>
-                      <button type="button" style={{ ...styles.actionBtn, color: "#dc2626" }} onClick={cancelEditing}>Cancel</button>
-                    </>
-                  ) : (
-                    <button type="button" style={styles.actionBtn} onClick={() => startEditing(product)}>Edit</button>
-                  )}
-                </td>
+            {filtered.map((p, i) => (
+              <tr key={p.fld_product_id} style={i % 2 === 0 ? S.rowEven : undefined}>
+                <td style={S.td}>{p.fld_product_id}</td><td style={S.td}>{p.fld_productName}</td><td style={S.td}>{p.fld_productSKU}</td>
+                <td style={S.td}>₱{Number(p.fld_price).toLocaleString()}</td><td style={S.td}>{p.fld_supplierName}</td><td style={S.td}>{p.fld_quantity ?? 0}</td>
               </tr>
             ))}
-            {pageProducts.length === 0 && (
-              <tr>
-                <td style={styles.td} colSpan={6}>No products found.</td>
-              </tr>
-            )}
+            {filtered.length === 0 && <tr><td style={S.td} colSpan={6}>No products found.</td></tr>}
           </tbody>
         </table>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 0", color: "#475569" }}>
-        <div>{`${start}-${end} of ${total}`}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            type="button"
-            style={{ ...styles.actionBtn, color: page === 1 ? "#94a3b8" : "#64748b", cursor: page === 1 ? "not-allowed" : "pointer" }}
-            onClick={() => onPageChange(Math.max(page - 1, 1))}
-            disabled={page === 1}
-          >
-            &lt;
-          </button>
-          <input
-            type="number"
-            min="1"
-            max={pageCount}
-            value={page}
-            onChange={(e) => onPageChange(Number(e.target.value))}
-            style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4 }}
-          />
-          <button
-            type="button"
-            style={{ ...styles.actionBtn, color: page === pageCount ? "#94a3b8" : "#64748b", cursor: page === pageCount ? "not-allowed" : "pointer" }}
-            onClick={() => onPageChange(Math.min(page + 1, pageCount))}
-            disabled={page === pageCount}
-          >
-            &gt;
-          </button>
-        </div>
       </div>
     </>
   );
 }
 
-function SuppliersTable({ suppliers }) {
+/* ── Suppliers Panel ────────────────────────────────────────── */
+function SuppliersPanel() {
+  const [suppliers, setSuppliers] = useState([]);
+  useEffect(() => { api.get("/admin/suppliers").then(r => setSuppliers(r.data || [])).catch(() => { }); }, []);
   return (
     <>
-      <SectionHeader
-        title="Suppliers"
-        subtitle="View supplier contacts and category details."
-      />
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
+      <div><h1 style={S.headerTitle}>Suppliers</h1><div style={S.topInfo}>View supplier contacts and details.</div></div>
+      <div style={S.tableWrapper}>
+        <table style={S.table}>
           <thead style={{ background: "#f1f5f9" }}>
-            <tr>
-              <th style={styles.th}>supplier_id</th>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>Category</th>
-              <th style={styles.th}>Contact</th>
-            </tr>
+            <tr><th style={S.th}>ID</th><th style={S.th}>Name</th><th style={S.th}>Phone</th><th style={S.th}>Email</th><th style={S.th}>Address</th></tr>
           </thead>
           <tbody>
-            {suppliers.map((supplier, index) => (
-              <tr key={supplier.id} style={index % 2 === 0 ? styles.rowEven : undefined}>
-                <td style={styles.td}>{supplier.id}</td>
-                <td style={styles.td}>{supplier.name}</td>
-                <td style={styles.td}>{supplier.category}</td>
-                <td style={styles.td}>{supplier.contact}</td>
+            {suppliers.map((s, i) => (
+              <tr key={s.fld_supplier_id} style={i % 2 === 0 ? S.rowEven : undefined}>
+                <td style={S.td}>{s.fld_supplier_id}</td><td style={S.td}>{s.fld_supplierName}</td><td style={S.td}>{s.fld_supplierPhoneNum}</td>
+                <td style={S.td}>{s.fld_supplierEmail}</td><td style={S.td}>{s.fld_supplierAddress}</td>
               </tr>
             ))}
+            {suppliers.length === 0 && <tr><td style={S.td} colSpan={5}>No suppliers found.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -595,271 +175,205 @@ function SuppliersTable({ suppliers }) {
   );
 }
 
+/* ── Stocks Panel ───────────────────────────────────────────── */
+function StocksPanel() {
+  const [stocks, setStocks] = useState([]);
+  const [search, setSearch] = useState("");
+  const [updating, setUpdating] = useState(false);
+  const [form, setForm] = useState({ product_id: "", quantity_change: "", reason: "" });
+  const [msg, setMsg] = useState("");
 
-function StocksTable({ stocks, page, onPageChange, pageSize, search, onSearch }) {
-  const filteredStocks = useMemo(() => {
-    const query = search?.trim().toLowerCase();
-    if (!query) return stocks;
-    return stocks.filter((stock) =>
-      [stock.productName, String(stock.quantity), stock.unit, String(stock.reorder), stock.status]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
+  const load = () => api.get("/reports/stock-levels").then(r => setStocks(r.data || [])).catch(() => { });
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return stocks;
+    return stocks.filter(s => [s.fld_productName, s.fld_productSKU, s.stock_status].join(" ").toLowerCase().includes(q));
   }, [stocks, search]);
 
-  const total = filteredStocks.length;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-  const pageStocks = filteredStocks.slice(start - 1, end);
-
-  function handlePageClick(targetPage) {
-    if (targetPage >= 1 && targetPage <= pageCount) {
-      onPageChange(targetPage);
-    }
+  async function handleUpdate(e) {
+    e.preventDefault(); setMsg("");
+    try {
+      const res = await api.post("/stock/update", { product_id: Number(form.product_id), quantity_change: Number(form.quantity_change), reason: form.reason });
+      setMsg(`Updated! Prev: ${res.data.previous_quantity}, New: ${res.data.new_quantity}`);
+      setForm({ product_id: "", quantity_change: "", reason: "" });
+      load();
+    } catch (err) { setMsg(err.message); }
   }
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-        <input
-          type="search"
-          placeholder="Search Stocks"
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          style={styles.searchInput}
-        />
-      </div>
-      <div style={styles.headerRow}>
-        <div>
-          <h1 style={styles.headerTitle}>Stocks</h1>
-          <div style={styles.topInfo}>View current inventory levels, reorder points, and stock status.</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+        <div><h1 style={S.headerTitle}>Stocks</h1><div style={S.topInfo}>View inventory levels and update stock.</div></div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <input type="search" placeholder="Search Stocks" value={search} onChange={e => setSearch(e.target.value)} style={S.searchInput} />
+          <button style={S.addButton} onClick={() => setUpdating(!updating)}>Update Stock</button>
         </div>
       </div>
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
+      {updating && (
+        <div style={S.addForm}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 18 }}>Update Stock</h3>
+          {msg && <p style={{ color: msg.startsWith("Updated") ? "#16a34a" : "#ef4444", marginBottom: 12, fontSize: 13 }}>{msg}</p>}
+          <form onSubmit={handleUpdate} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
+            <input placeholder="Product ID" value={form.product_id} onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))} style={S.formInput} required />
+            <input placeholder="Qty Change (+/-)" value={form.quantity_change} onChange={e => setForm(f => ({ ...f, quantity_change: e.target.value }))} style={S.formInput} required />
+            <input placeholder="Reason" value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} style={S.formInput} required />
+            <div style={{ display: "flex", gap: 12, gridColumn: "1/-1" }}>
+              <button type="submit" style={S.saveButton}>Submit</button>
+              <button type="button" style={{ ...S.saveButton, background: "#dc2626" }} onClick={() => setUpdating(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div style={S.tableWrapper}>
+        <table style={S.table}>
           <thead style={{ background: "#f1f5f9" }}>
-            <tr>
-              <th style={styles.th}>stock_id</th>
-              <th style={styles.th}>productName</th>
-              <th style={styles.th}>quantity</th>
-              <th style={styles.th}>unit</th>
-              <th style={styles.th}>reorder</th>
-              <th style={styles.th}>status</th>
-            </tr>
+            <tr><th style={S.th}>Product</th><th style={S.th}>SKU</th><th style={S.th}>Quantity</th><th style={S.th}>Threshold</th><th style={S.th}>Status</th></tr>
           </thead>
           <tbody>
-            {pageStocks.map((stock, index) => (
-              <tr key={stock.id} style={index % 2 === 0 ? styles.rowEven : undefined}>
-                <td style={styles.td}>{stock.id}</td>
-                <td style={styles.td}>{stock.productName}</td>
-                <td style={styles.td}>{stock.quantity}</td>
-                <td style={styles.td}>{stock.unit}</td>
-                <td style={styles.td}>{stock.reorder}</td>
-                <td style={styles.td}>
-                  <span
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 999,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      display: "inline-block",
-                      background: stock.status === "Low Stock" ? "#fee2e2" : "#dcfce7",
-                      color: stock.status === "Low Stock" ? "#b91c1c" : "#166534",
-                    }}
-                  >
-                    {stock.status}
-                  </span>
-                </td>
+            {filtered.map((s, i) => (
+              <tr key={i} style={i % 2 === 0 ? S.rowEven : undefined}>
+                <td style={S.td}>{s.fld_productName}</td><td style={S.td}>{s.fld_productSKU}</td><td style={S.td}>{s.fld_quantity}</td>
+                <td style={S.td}>{s.fld_low_stock_threshold}</td><td style={S.td}><span style={S.badge(s.stock_status)}>{s.stock_status === "ok" ? "In Stock" : s.stock_status === "low" ? "Low Stock" : "Out of Stock"}</span></td>
               </tr>
             ))}
-            {pageStocks.length === 0 && (
-              <tr>
-                <td style={styles.td} colSpan={6}>No stocks found.</td>
-              </tr>
-            )}
+            {filtered.length === 0 && <tr><td style={S.td} colSpan={5}>No stock data.</td></tr>}
           </tbody>
         </table>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 0", color: "#475569" }}>
-        <div>{`${total === 0 ? 0 : start}-${end} of ${total}`}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            type="button"
-            style={{ ...styles.actionBtn, color: page === 1 ? "#94a3b8" : "#64748b", cursor: page === 1 ? "not-allowed" : "pointer" }}
-            onClick={() => onPageChange(Math.max(page - 1, 1))}
-            disabled={page === 1}
-          >
-            &lt;
-          </button>
-          <input
-            type="number"
-            min="1"
-            max={pageCount}
-            value={page}
-            onChange={(e) => onPageChange(Number(e.target.value))}
-            style={{ width: 60, textAlign: "center", padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4 }}
-          />
-          <button
-            type="button"
-            style={{ ...styles.actionBtn, color: page === pageCount ? "#94a3b8" : "#64748b", cursor: page === pageCount ? "not-allowed" : "pointer" }}
-            onClick={() => onPageChange(Math.min(page + 1, pageCount))}
-            disabled={page === pageCount}
-          >
-            &gt;
-          </button>
-        </div>
-      </div>
     </>
   );
 }
 
-function DashboardOverview() {
+/* ── Reports Panel ──────────────────────────────────────────── */
+function ReportsPanel() {
+  const [tab, setTab] = useState("all");
+  const [all, setAll] = useState([]);
+  const [low, setLow] = useState([]);
+  useEffect(() => {
+    api.get("/reports/stock-levels").then(r => setAll(r.data || [])).catch(() => { });
+    api.get("/reports/low-stock").then(r => setLow(r.data || [])).catch(() => { });
+  }, []);
+  const data = tab === "low" ? low : all;
   return (
     <>
-      <SectionHeader
-        title="Dashboard"
-        subtitle="Quick overview of your inventory performance and key metrics."
-      />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 18 }}>
-        <div style={styles.smallMetric}>
-          <div>
-            <div style={styles.metricLabel}>Total products</div>
-            <div style={styles.metricValue}>214</div>
-          </div>
-        </div>
-        <div style={styles.smallMetric}>
-          <div>
-            <div style={styles.metricLabel}>Active suppliers</div>
-            <div style={styles.metricValue}>18</div>
-          </div>
-        </div>
-        <div style={styles.smallMetric}>
-          <div>
-            <div style={styles.metricLabel}>Low stock items</div>
-            <div style={styles.metricValue}>6</div>
-          </div>
-        </div>
+      <div><h1 style={S.headerTitle}>Reports</h1><div style={S.topInfo}>Stock level reports and low-stock alerts.</div></div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 22 }}>
+        <button style={{ ...S.addButton, background: tab === "all" ? "#2563eb" : "#e2e8f0", color: tab === "all" ? "#fff" : "#0f172a" }} onClick={() => setTab("all")}>All Stock Levels</button>
+        <button style={{ ...S.addButton, background: tab === "low" ? "#dc2626" : "#e2e8f0", color: tab === "low" ? "#fff" : "#0f172a" }} onClick={() => setTab("low")}>Low Stock Alert</button>
+      </div>
+      <div style={S.tableWrapper}>
+        <table style={S.table}>
+          <thead style={{ background: "#f1f5f9" }}>
+            <tr><th style={S.th}>Product</th><th style={S.th}>SKU</th>{tab === "low" && <th style={S.th}>Supplier</th>}<th style={S.th}>Qty</th><th style={S.th}>Threshold</th><th style={S.th}>Status</th></tr>
+          </thead>
+          <tbody>
+            {data.map((s, i) => (
+              <tr key={i} style={i % 2 === 0 ? S.rowEven : undefined}>
+                <td style={S.td}>{s.fld_productName}</td><td style={S.td}>{s.fld_productSKU}</td>
+                {tab === "low" && <td style={S.td}>{s.fld_supplierName}</td>}
+                <td style={S.td}>{s.fld_quantity}</td><td style={S.td}>{s.fld_low_stock_threshold}</td>
+                <td style={S.td}><span style={S.badge(s.stock_status)}>{s.stock_status === "ok" ? "In Stock" : s.stock_status === "low" ? "Low Stock" : "Out of Stock"}</span></td>
+              </tr>
+            ))}
+            {data.length === 0 && <tr><td style={S.td} colSpan={tab === "low" ? 6 : 5}>No data.</td></tr>}
+          </tbody>
+        </table>
       </div>
     </>
   );
 }
 
+/* ── Profile Panel ──────────────────────────────────────────── */
+function ProfilePanel() {
+  const [profile, setProfile] = useState({ username: "", email: "", phone: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState({ text: "", ok: false });
+
+  useEffect(() => {
+    api.get("/users/profile").then(r => {
+      const d = r.data || {};
+      setProfile({ username: d.fld_username || "", email: d.fld_email || "", phone: d.fld_phone || "" });
+    }).catch(() => { }).finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave(e) {
+    e.preventDefault(); setSaving(true); setMsg({ text: "", ok: false });
+    try {
+      await api.put("/users/profile", profile);
+      setMsg({ text: "Profile updated successfully.", ok: true });
+    } catch (err) { setMsg({ text: err.message, ok: false }); }
+    finally { setSaving(false); }
+  }
+
+  if (loading) return <div>Loading profile...</div>;
+  return (
+    <>
+      <div><h1 style={S.headerTitle}>Profile</h1><div style={S.topInfo}>View and edit your account information.</div></div>
+      <div style={S.addForm}>
+        {msg.text && <p style={{ color: msg.ok ? "#16a34a" : "#ef4444", marginBottom: 12, fontSize: 13 }}>{msg.text}</p>}
+        <form onSubmit={handleSave} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 600 }}>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 13, color: "#64748b", marginBottom: 4, display: "block" }}>Username</label><input value={profile.username} onChange={e => setProfile(p => ({ ...p, username: e.target.value }))} style={S.formInput} required /></div>
+          <div><label style={{ fontSize: 13, color: "#64748b", marginBottom: 4, display: "block" }}>Email</label><input type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} style={S.formInput} required /></div>
+          <div><label style={{ fontSize: 13, color: "#64748b", marginBottom: 4, display: "block" }}>Phone</label><input value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} style={S.formInput} /></div>
+          <div><button type="submit" disabled={saving} style={S.saveButton}>{saving ? "Saving..." : "Save Changes"}</button></div>
+        </form>
+      </div>
+    </>
+  );
+}
+
+/* ── Main Dashboard Shell ───────────────────────────────────── */
 export default function DashboardPage() {
-  console.log('DashboardPage rendering');
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [products, setProducts] = useState(sampleProducts);
-  const [productPage, setProductPage] = useState(1);
-  const [stockPage, setStockPage] = useState(1);
-  const [stockSearch, setStockSearch] = useState("");
-  const [activeNav, setActiveNav] = useState("products");
+  const [activeNav, setActiveNav] = useState("dashboard");
+  const role = localStorage.getItem("role");
 
-  function handleNavClick(id) {
-    setActiveNav(id);
-    setSearch("");
-    setProductPage(1);
-    setStockPage(1);
-    setStockSearch("");
-  }
+  // Filter nav items based on role
+  const visibleNavItems = navItems.filter(item => {
+    if (item.id === 'suppliers' && role !== 'admin') return false;
+    return true;
+  });
 
-  function handleAddProduct(newProduct) {
-    const maxId = products.length > 0 ? Math.max(...products.map(p => p.product_id)) : 0;
-    const productWithId = { ...newProduct, product_id: maxId + 1 };
-    setProducts((prev) => [...prev, productWithId]);
-  }
-
-  function handleSaveProduct(productId, updatedValues) {
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.product_id === productId ? { ...product, ...updatedValues } : product
-      )
-    );
-  }
-
-  function handleLogout() {
-    navigate("/login");
-  }
+  function handleLogout() { localStorage.clear(); navigate("/login"); }
 
   function renderSection() {
     switch (activeNav) {
-      case "dashboard":
-        return <DashboardOverview />;
-      case "products":
-        return <ProductsTable
-          products={products}
-          search={search}
-          onSearch={setSearch}
-          page={productPage}
-          onPageChange={setProductPage}
-          pageSize={5}
-          onSaveProduct={handleSaveProduct}
-          onAddProduct={handleAddProduct}
-        />;
-      case "suppliers":
-        return <SuppliersTable suppliers={sampleSuppliers} />;
-      case "stocks":
-        return <StocksTable
-          stocks={sampleStocks}
-          page={stockPage}
-          onPageChange={setStockPage}
-          pageSize={5}
-          search={stockSearch}
-          onSearch={setStockSearch}
-        />;
-      default:
-        return null;
+      case "dashboard": return <DashboardOverview />;
+      case "products": return <ProductsPanel />;
+      case "suppliers": return <SuppliersPanel />;
+      case "stocks": return <StocksPanel />;
+      case "reports": return <ReportsPanel />;
+      case "profile": return <ProfilePanel />;
+      default: return null;
     }
   }
 
   return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div style={styles.logoBox}>
-          <div style={styles.sidebarLogo}>T</div>
+    <div style={S.page}>
+      <aside style={S.sidebar}>
+        <div style={S.logoBox}>
+          <div style={S.sidebarLogo}>T</div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Toriventy</div>
+            <div style={{ fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+              Toriventy
+              {role === 'admin' && (
+                <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 800, letterSpacing: 0.5 }}>ADMIN</span>
+              )}
+            </div>
             <div style={{ fontSize: 12, color: "#94a3b8" }}>Inventory</div>
           </div>
         </div>
-
-        {navItems.map((item) => (
-          <div key={item.id}>
-            <div
-              style={styles.navItem(item.id === activeNav || (item.subItems || []).some((sub) => sub.id === activeNav))}
-              onClick={() => handleNavClick(item.id)}
-            >
-              <div style={styles.navItemLabel}>
-                <NavIcon id={item.id} active={item.id === activeNav || (item.subItems || []).some((sub) => sub.id === activeNav)} />
-                {item.label}
-              </div>
-              {(item.id === activeNav || (item.subItems || []).some((sub) => sub.id === activeNav)) && <span style={{ opacity: 0.8 }}>→</span>}
-            </div>
-            {item.subItems && item.subItems.map((sub) => (
-              <div
-                key={sub.id}
-                style={{
-                  ...styles.navItem(sub.id === activeNav),
-                  marginLeft: 24,
-                  padding: "10px 16px",
-                  background: sub.id === activeNav ? "rgba(255,255,255,.08)" : "transparent",
-                  fontSize: 14,
-                }}
-                onClick={() => handleNavClick(sub.id)}
-              >
-                <span style={{ color: sub.id === activeNav ? "#fff" : "#cbd5e1" }}>{sub.label}</span>
-              </div>
-            ))}
+        {visibleNavItems.map(item => (
+          <div key={item.id} style={S.navItem(item.id === activeNav)} onClick={() => setActiveNav(item.id)}>
+            <NavIcon id={item.id} active={item.id === activeNav} /> {item.label}
           </div>
         ))}
-
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          Logout
-        </button>
+        <button style={S.logoutBtn} onClick={handleLogout}>Logout</button>
       </aside>
-
-      <main style={styles.content}>{renderSection()}</main>
+      <main style={S.content}>{renderSection()}</main>
     </div>
   );
 }

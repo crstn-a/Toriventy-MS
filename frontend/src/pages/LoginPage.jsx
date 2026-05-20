@@ -25,6 +25,7 @@ export default function LoginPage() {
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('role', user.fld_role);
 
       navigate('/dashboard');
 

@@ -1,4 +1,8 @@
 <?php
+namespace Models;
+
+use PDO;
+
 class Stocks {
     public function __construct(private PDO $pdo) {}
 
@@ -8,14 +12,11 @@ class Stocks {
         return $stmt->fetch() ?: null;
     }
 
-    public function updateQuantity(int $productId, int $newQty): void {
-        $stmt = $this->pdo->prepare("CALL updateStock(?, ?)");
-        $stmt->execute([$productId, $newQty]);
-    }
-
-    public function logChange(int $productId, int $userId, int $change, string $reason): void {
-        // Log functionality handled by procedure if supported
-        // Otherwise kept for compatibility
+    public function updateQuantity(int $productId, int $userId, int $change, string $reason): array {
+        // Procedure signature: updateStock(p_product_id, p_user_id, p_quantity_change, p_reason) (4 parameters)
+        $stmt = $this->pdo->prepare("CALL updateStock(?, ?, ?, ?)");
+        $stmt->execute([$productId, $userId, $change, $reason]);
+        return $stmt->fetch() ?: [];
     }
 
     public function allLevels(): array {
