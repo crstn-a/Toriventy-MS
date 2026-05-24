@@ -423,17 +423,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
--- ============================================================================
--- SEED INITIAL SYSTEM DATA (DEFAULT SUPPLIER & DEFAULT ADMIN ACCOUNT)
--- ============================================================================
--- Default Supplier (Needed so products can be created)
-INSERT INTO tbl_suppliers (fld_supplier_id, fld_supplierName, fld_supplierPhoneNum, fld_supplierEmail, fld_supplierAddress)
-VALUES (1, 'Global Tech Supplies', '0917-123-4567', 'sales@globaltech.com', '123 Industrial Parkway, Suite A')
-ON DUPLICATE KEY UPDATE fld_supplierName=fld_supplierName;
-
--- Default Admin User (Password is 'admin123')
--- Email and Phone are stored in plaintext. Phone is not encrypted in SQL seed, but app will re-save it securely.
-INSERT INTO tbl_users (fld_user_id, fld_username, fld_email, fld_phone, fld_password_hash, fld_role)
-VALUES (1, 'System Admin', 'admin@toriventy.com', '09123456789', '$2y$10$tZ2wzEew/sR1wD/Ue2G3f.yJc05x.eH5yG1Qy5mO2kZ3T9q0u.G5m', 'admin')
-ON DUPLICATE KEY UPDATE fld_username=fld_username;

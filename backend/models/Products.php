@@ -30,7 +30,15 @@ class Products {
             $data['low_stock_threshold'] ?? 10,
         ]);
         $result = $stmt->fetch();
-        return $result ? (int)$result['fld_product_id'] : 0;
+        $productId = $result ? (int)$result['fld_product_id'] : 0;
+
+        // If an initial quantity was provided, update the stock record created by the procedure
+        if ($productId > 0 && isset($data['quantity']) && $data['quantity'] !== '') {
+            $updateStmt = $this->pdo->prepare("UPDATE tbl_stock SET fld_quantity = ? WHERE fld_product_id = ?");
+            $updateStmt->execute([$data['quantity'], $productId]);
+        }
+
+        return $productId;
     }
 
     public function update(int $id, array $data): bool {

@@ -4,16 +4,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import SignupPage from './pages/SignupPage';
-import Products from './pages/ProductsPage';
-import StockPage from './pages/StockPage';
-import Suppliers from './pages/SuppliersPage';
-import Reports from './pages/ReportsPage';
 
 export default function App() {
   return (
       <Routes>
         {/* Redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -29,41 +25,8 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/products"
-          element={
-            <ProtectedRoute>
-              <Products />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/stock"
-          element={
-            <ProtectedRoute>
-              <StockPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/suppliers"
-          element={
-            <ProtectedRoute adminOnly>
-              <Suppliers />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports"
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
+        {/* Catch-all redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
   );
 }

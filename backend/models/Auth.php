@@ -9,16 +9,17 @@ class Auth {
     public function __construct(private PDO $pdo) {}
 
     public function register(array $data): array {
-        $stmt = $this->pdo->prepare(
-            "INSERT INTO tbl_users (fld_username, fld_email, fld_password_hash) VALUES (?, ?, ?)"
-        );
+        // Procedure signature: registerUser(username, email, phone, password_hash, role)
+        $stmt = $this->pdo->prepare("CALL registerUser(?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['username'],
             $data['email'],
+            $data['phone'] ?? null,
             password_hash($data['password'], PASSWORD_BCRYPT),
+            'user' // default role
         ]);
-
-        return ['user_id' => (int)$this->pdo->lastInsertId()];
+        $result = $stmt->fetch();
+        return ['user_id' => $result ? (int)$result['fld_user_id'] : 0];
     }
 
     public function login(string $email, string $password): array {
@@ -43,17 +44,21 @@ class Auth {
 
     public function findById(int $id): ?array {
         $stmt = $this->pdo->prepare(
-            "SELECT fld_user_id, fld_username, fld_email, fld_role FROM tbl_users WHERE fld_user_id = ?"
+            "SELECT fld_user_id, fld_username, fld_email, fld_phone, fld_role FROM tbl_users WHERE fld_user_id = ?"
         );
         $stmt->execute([$id]);
         return $stmt->fetch() ?: null;
     }
 
     public function updateProfile(int $id, array $data): void {
-        $stmt = $this->pdo->prepare(
-            "UPDATE tbl_users SET fld_username = ?, fld_email = ? WHERE fld_user_id = ?"
-        );
-        $stmt->execute([$data['username'], $data['email'], $id]);
+        // Procedure signature: updateUserProfile(user_id, username, email, phone)
+        $stmt = $this->pdo->prepare("CALL updateUserProfile(?, ?, ?, ?)");
+        $stmt->execute([
+            $id,
+            $data['username'],
+            $data['email'],
+            $data['phone'] ?? null
+        ]);
     }
 
     public function emailExists(string $email): bool {

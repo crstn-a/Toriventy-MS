@@ -38,7 +38,12 @@ class SupplierController {
     public function update(int $id): void {
         requireAdmin();
         $body   = json_decode(file_get_contents('php://input'), true) ?? [];
-        $errors = validate($body, ['supplierName' => 'required']);
+        $errors = validate($body, [
+            'supplierName'     => 'required',
+            'supplierPhoneNum' => 'required',
+            'supplierEmail'    => 'required|email',
+            'supplierAddress'  => 'required',
+        ]);
         if ($errors) error('Validation failed', 400, $errors);
 
         $this->model->update($id, $body);
