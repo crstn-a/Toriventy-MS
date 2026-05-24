@@ -23,7 +23,7 @@ class SupplierController {
 
     public function store(): void {
         requireAdmin();
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'supplierName'     => 'required',
             'supplierPhoneNum' => 'required',
@@ -37,7 +37,7 @@ class SupplierController {
 
     public function update(int $id): void {
         requireAdmin();
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'supplierName'     => 'required',
             'supplierPhoneNum' => 'required',

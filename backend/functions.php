@@ -1,8 +1,74 @@
 <?php
 use Models\Auth;
 
+class AESGCM {
+    private static function getKeyBytes(): string {
+        $key = $_ENV['ENCRYPTION_KEY'] ?? '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+        return hex2bin($key);
+    }
+
+    public static function encrypt(string $plaintext): string {
+        if ($plaintext === '') return '';
+        $keyBytes = self::getKeyBytes();
+        $iv = openssl_random_pseudo_bytes(12);
+        $tag = '';
+        $ciphertext = openssl_encrypt($plaintext, 'aes-256-gcm', $keyBytes, OPENSSL_RAW_DATA, $iv, $tag);
+        return base64_encode($iv . $ciphertext . $tag);
+    }
+
+    public static function decrypt(string $base64Ciphertext): ?string {
+        if ($base64Ciphertext === '') return '';
+        $data = base64_decode($base64Ciphertext, true);
+        if ($data === false || strlen($data) < 28) {
+            return null;
+        }
+        $iv = substr($data, 0, 12);
+        $tag = substr($data, -16);
+        $ciphertext = substr($data, 12, -16);
+        $keyBytes = self::getKeyBytes();
+        $decrypted = openssl_decrypt($ciphertext, 'aes-256-gcm', $keyBytes, OPENSSL_RAW_DATA, $iv, $tag);
+        return $decrypted !== false ? $decrypted : null;
+    }
+}
+
+function encryptSensitiveFields(&$data): void {
+    if (is_array($data)) {
+        foreach ($data as $key => &$value) {
+            if (is_array($value)) {
+                encryptSensitiveFields($value);
+            } elseif (is_string($value) && $value !== '') {
+                if ($key === 'email' || $key === 'fld_email' || $key === 'phone' || $key === 'fld_phone') {
+                    $value = AESGCM::encrypt($value);
+                }
+            }
+        }
+    }
+}
+
+function decryptSensitiveFields(array &$body): void {
+    foreach ($body as $key => &$value) {
+        if (is_array($value)) {
+            decryptSensitiveFields($value);
+        } elseif (is_string($value) && $value !== '') {
+            if ($key === 'email' || $key === 'password' || $key === 'phone') {
+                $decrypted = AESGCM::decrypt($value);
+                if ($decrypted !== null) {
+                    $value = $decrypted;
+                }
+            }
+        }
+    }
+}
+
+function getRequestBody(): array {
+    $body = json_decode(file_get_contents('php://input'), true) ?? [];
+    decryptSensitiveFields($body);
+    return $body;
+}
+
 // ─── Response ────────────────────────────────────────────────────────────────
 function respond(string $status, string $message, mixed $data, int $code): void {
+    encryptSensitiveFields($data);
     header('Content-Type: application/json; charset=utf-8');
     http_response_code($code);
     echo json_encode(['status' => $status, 'message' => $message, 'data' => $data]);

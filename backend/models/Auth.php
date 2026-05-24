@@ -14,7 +14,7 @@ class Auth {
         $stmt->execute([
             $data['username'],
             $data['email'],
-            $data['phone'] ?? null,
+            (!empty($data['phone'])) ? \AESGCM::encrypt($data['phone']) : null,
             password_hash($data['password'], PASSWORD_BCRYPT),
             'user' // default role
         ]);
@@ -47,7 +47,14 @@ class Auth {
             "SELECT fld_user_id, fld_username, fld_email, fld_phone, fld_role FROM tbl_users WHERE fld_user_id = ?"
         );
         $stmt->execute([$id]);
-        return $stmt->fetch() ?: null;
+        $user = $stmt->fetch() ?: null;
+        if ($user && !empty($user['fld_phone'])) {
+            $decrypted = \AESGCM::decrypt($user['fld_phone']);
+            if ($decrypted !== null) {
+                $user['fld_phone'] = $decrypted;
+            }
+        }
+        return $user;
     }
 
     public function updateProfile(int $id, array $data): void {
@@ -57,7 +64,7 @@ class Auth {
             $id,
             $data['username'],
             $data['email'],
-            $data['phone'] ?? null
+            (!empty($data['phone'])) ? \AESGCM::encrypt($data['phone']) : null
         ]);
     }
 

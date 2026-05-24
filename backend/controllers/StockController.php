@@ -20,7 +20,7 @@ class StockController {
 
     public function update(): void {
         $payload = requireAuth();
-        $body    = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body    = getRequestBody();
         $errors  = validate($body, [
             'product_id'      => 'required|numeric',
             'quantity_change' => 'required|numeric',

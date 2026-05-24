@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+frontend/node_modules/*
+frontend/package-lock.json
+frontend/vite.config.js
+.vscode/
+.env
+frontend/.env
+frontend/.env.example

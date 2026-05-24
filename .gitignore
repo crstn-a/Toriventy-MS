@@ -1,7 +1,11 @@
 backend/config/*
 backend/vendor/*
-frontend/node_modules/*
 backend/composer.lock
+frontend/node_modules/*
 frontend/package-lock.json
 frontend/vite.config.js
 .vscode/
+.env
+frontend/.env
+frontend/.env.*
+frontend/.env.example

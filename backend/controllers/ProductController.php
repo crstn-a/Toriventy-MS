@@ -30,7 +30,7 @@ class ProductController {
 
     public function store(): void {
         requireAdmin();
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'productName' => 'required',
             'productSKU'  => 'required',
@@ -45,7 +45,7 @@ class ProductController {
 
     public function update(int $id): void {
         requireAdmin();
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'productName' => 'required',
             'productSKU'  => 'required',

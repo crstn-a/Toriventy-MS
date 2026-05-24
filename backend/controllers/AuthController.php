@@ -12,7 +12,7 @@ class AuthController {
     }
 
     public function register(): void {
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'username' => 'required',
             'email'    => 'required|email',
@@ -28,7 +28,7 @@ class AuthController {
     }
 
     public function login(): void {
-        $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body   = getRequestBody();
         $errors = validate($body, [
             'email'    => 'required|email',
             'password' => 'required',
@@ -47,7 +47,7 @@ class AuthController {
 
     public function updateProfile(): void {
         $payload = requireAuth();
-        $body    = json_decode(file_get_contents('php://input'), true) ?? [];
+        $body    = getRequestBody();
         $errors  = validate($body, ['username' => 'required', 'email' => 'required|email']);
         if ($errors) error('Validation failed', 400, $errors);
 
